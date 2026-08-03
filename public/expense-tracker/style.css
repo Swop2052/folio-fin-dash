@@ -807,3 +807,8 @@ textarea:focus {
     margin-left: 52px;
   }
 }
+
+/* Ensure the hidden attribute always wins over display rules above */
+[hidden] {
+  display: none !important;
+}
