@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Expense Tracker — Personal Finance Dashboard</title>
+    <meta
+      name="description"
+      content="Track income, expenses, savings and category insights with Smart Expense Tracker, a modern offline-first finance dashboard."
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Loading animation -->
+    <div class="loader" id="loader">
+      <div class="loader__ring"></div>
+      <p>Loading your dashboard…</p>
+    </div>
+
+    <!-- Decorative background blobs -->
+    <div class="bg-blobs" aria-hidden="true">
+      <span class="blob blob--1"></span>
+      <span class="blob blob--2"></span>
+      <span class="blob blob--3"></span>
+    </div>
+
+    <div class="app" id="app" hidden>
+      <!-- ================= SIDEBAR ================= -->
+      <aside class="sidebar glass" id="sidebar">
+        <div class="brand">
+          <div class="brand__mark">₹</div>
+          <div>
+            <strong>Smart Expense</strong>
+            <span>Tracker</span>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav__item is-active" data-nav="dashboard">Dashboard</button>
+          <button class="nav__item" data-nav="transactions">Transactions</button>
+          <button class="nav__item" data-nav="analytics">Analytics</button>
+        </nav>
+        <div class="sidebar__foot">
+          <button class="btn btn--ghost" id="exportBtn">Export JSON</button>
+          <button class="btn btn--ghost danger" id="resetBtn">Clear all data</button>
+        </div>
+      </aside>
+
+      <!-- ================= MAIN ================= -->
+      <main class="main">
+        <header class="topbar glass">
+          <button class="icon-btn only-mobile" id="menuBtn" aria-label="Menu">☰</button>
+          <div class="topbar__title">
+            <h1 id="pageTitle">Dashboard</h1>
+            <p id="pageSub">Your money at a glance</p>
+          </div>
+          <div class="topbar__actions">
+            <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode">🌙</button>
+            <button class="btn btn--primary" id="openFormBtn">+ Add Transaction</button>
+          </div>
+        </header>
+
+        <!-- ---------- DASHBOARD ---------- -->
+        <section class="view" data-view="dashboard">
+          <div class="stats">
+            <article class="card stat glass">
+              <span class="stat__label">Total Balance</span>
+              <strong class="stat__value" id="statBalance">₹0</strong>
+              <span class="chip" id="statBalanceHint">All time</span>
+            </article>
+            <article class="card stat glass stat--income">
+              <span class="stat__label">Total Income</span>
+              <strong class="stat__value" id="statIncome">₹0</strong>
+              <span class="chip chip--success">Money in</span>
+            </article>
+            <article class="card stat glass stat--expense">
+              <span class="stat__label">Total Expenses</span>
+              <strong class="stat__value" id="statExpense">₹0</strong>
+              <span class="chip chip--danger">Money out</span>
+            </article>
+            <article class="card stat glass">
+              <span class="stat__label">Monthly Savings</span>
+              <strong class="stat__value" id="statSavings">₹0</strong>
+              <span class="chip" id="statSavingsHint">This month</span>
+            </article>
+          </div>
+
+          <div class="grid-2">
+            <article class="card glass">
+              <header class="card__head">
+                <h2>Monthly Expenses</h2>
+                <span class="muted">Last 6 months</span>
+              </header>
+              <canvas id="barChart" height="260"></canvas>
+              <p class="empty" id="barEmpty" hidden>No expense data yet.</p>
+            </article>
+            <article class="card glass">
+              <header class="card__head">
+                <h2>Category Split</h2>
+                <span class="muted">Expenses</span>
+              </header>
+              <div class="pie-wrap">
+                <canvas id="pieChart" width="220" height="220"></canvas>
+                <ul class="legend" id="pieLegend"></ul>
+              </div>
+              <p class="empty" id="pieEmpty" hidden>No categories to show.</p>
+            </article>
+          </div>
+
+          <article class="card glass">
+            <header class="card__head">
+              <h2>Recent Transactions</h2>
+              <button class="btn btn--ghost" data-nav="transactions">View all</button>
+            </header>
+            <ul class="tx-list" id="recentList"></ul>
+            <p class="empty" id="recentEmpty" hidden>
+              Nothing here yet — add your first transaction.
+            </p>
+          </article>
+        </section>
+
+        <!-- ---------- TRANSACTIONS ---------- -->
+        <section class="view" data-view="transactions" hidden>
+          <article class="card glass">
+            <div class="filters">
+              <input type="search" id="searchInput" placeholder="Search title, notes…" />
+              <select id="categoryFilter"><option value="">All categories</option></select>
+              <select id="monthFilter"><option value="">All months</option></select>
+              <select id="typeFilter">
+                <option value="">All types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            </div>
+            <ul class="tx-list" id="txList"></ul>
+            <p class="empty" id="txEmpty" hidden>No transactions match your filters.</p>
+            <div class="pagination" id="pagination"></div>
+          </article>
+        </section>
+
+        <!-- ---------- ANALYTICS ---------- -->
+        <section class="view" data-view="analytics" hidden>
+          <div class="grid-2">
+            <article class="card glass">
+              <header class="card__head"><h2>Highest Expense Category</h2></header>
+              <div class="highlight" id="topCategory">—</div>
+              <p class="muted" id="topCategoryMeta">Add expenses to see insights.</p>
+            </article>
+            <article class="card glass">
+              <header class="card__head"><h2>This Month Summary</h2></header>
+              <ul class="summary" id="monthSummary"></ul>
+            </article>
+          </div>
+          <article class="card glass">
+            <header class="card__head"><h2>Monthly Breakdown</h2></header>
+            <div class="table-scroll">
+              <table class="table" id="monthTable">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                    <th>Savings</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="empty" id="monthTableEmpty" hidden>No data available.</p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <!-- ================= FORM DRAWER ================= -->
+    <div class="overlay" id="overlay" hidden></div>
+    <aside class="drawer glass" id="drawer" hidden aria-label="Transaction form">
+      <header class="drawer__head">
+        <h2 id="drawerTitle">Add Transaction</h2>
+        <button class="icon-btn" id="closeFormBtn" aria-label="Close">✕</button>
+      </header>
+      <form id="txForm" novalidate>
+        <input type="hidden" id="txId" />
+        <div class="toggle" role="tablist">
+          <button type="button" class="toggle__btn is-active" data-type="expense">Expense</button>
+          <button type="button" class="toggle__btn" data-type="income">Income</button>
+        </div>
+        <label>
+          Title *
+          <input type="text" id="title" maxlength="60" placeholder="Grocery shopping" />
+          <small class="err" data-err="title"></small>
+        </label>
+        <label>
+          Amount *
+          <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" />
+          <small class="err" data-err="amount"></small>
+        </label>
+        <label>
+          Category *
+          <select id="category"></select>
+          <small class="err" data-err="category"></small>
+        </label>
+        <label>
+          Date *
+          <input type="date" id="date" />
+          <small class="err" data-err="date"></small>
+        </label>
+        <label>
+          Notes
+          <textarea id="notes" rows="3" maxlength="200" placeholder="Optional details"></textarea>
+          <small class="err" data-err="notes"></small>
+        </label>
+        <div class="drawer__foot">
+          <button type="button" class="btn btn--ghost" id="cancelFormBtn">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="saveBtn">Save</button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- ================= CONFIRM DIALOG ================= -->
+    <div class="modal" id="confirmModal" hidden>
+      <div class="modal__box glass">
+        <h3>Delete transaction?</h3>
+        <p class="muted" id="confirmText">This action cannot be undone.</p>
+        <div class="modal__foot">
+          <button class="btn btn--ghost" id="confirmCancel">Cancel</button>
+          <button class="btn btn--danger" id="confirmOk">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TOASTS ================= -->
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
